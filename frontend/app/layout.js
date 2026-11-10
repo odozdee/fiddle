@@ -1,6 +1,7 @@
 import "./styles.css";
 import Link from "next/link";
 import { AuthProvider } from "./auth-provider";
+import AccountLink from "./account-link";
 
 export const metadata = {
   title: "Fiddle",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
               <nav className="site-nav" aria-label="Main navigation">
                 <Link href="/">Home</Link>
                 <Link href="/practice">Practice Studio</Link>
+                <AccountLink />
               </nav>
             </div>
           </header>
