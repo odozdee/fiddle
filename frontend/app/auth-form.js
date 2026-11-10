@@ -12,7 +12,7 @@ const actions = {
   reset: "Save password",
 };
 
-export default function AuthForm({ mode, showSignup = false, showForgot = false }) {
+export default function AuthForm({ mode }) {
   const { client, user, loading, error: sessionError } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -92,7 +92,7 @@ export default function AuthForm({ mode, showSignup = false, showForgot = false 
         {(error || callbackError || sessionError) && <p className="error" role="alert">{error || callbackError || sessionError}</p>}
         {notice && <p className="auth-notice" role="status">{notice}</p>}
         <div className="auth-links">
-          {mode === "login" ? <>{showSignup && <Link href="/signup">Create an account</Link>}{showForgot && <Link href="/forgot-password">Forgot password?</Link>}</> : <Link href="/login">Back to sign in</Link>}
+          {mode === "login" ? <><Link href="/signup">Create an account</Link><Link href="/forgot-password">Forgot password?</Link></> : <Link href="/login">Back to sign in</Link>}
         </div>
       </section>
     </main>
