@@ -72,6 +72,9 @@ h2 { font: 400 1.7rem Georgia, serif; }
   .site-nav { flex-wrap: wrap; }
 }
 
+.page-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+.page-controls button { padding: 0.45rem 0.75rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--paper); color: var(--ink); }
+
 body:has(.auth-form-page) .topbar { display: none; }
 .auth-form-page { display: grid; align-content: center; min-height: 100svh; max-width: 29rem; padding-block: 2rem; }
 .auth-form-page .auth-card h1 { margin: 0 0 1.6rem; font: 400 2rem Georgia, serif; }
