@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
+import PerformanceReview from "./performance-review";
 
 const apiUrl = process.env.NEXT_PUBLIC_FIDDLE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -15,7 +16,7 @@ async function post(path, body, signal) {
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(typeof data?.detail === "string" && response.status < 500
+    throw new Error(typeof data?.detail === "string" && (response.status < 500 || (path === "/performance-feedback" && response.status === 502))
       ? data.detail : `Fiddle could not complete this request (HTTP ${response.status}).`);
   }
   return data;
@@ -99,8 +100,8 @@ export default function PracticePage() {
     currentRun.current.abort();
     setStopMode(mode);
     if (mode === "finish") {
-      const firstReady = Object.keys(pageResults).find((number) => !pageResults[number].error);
-      if (firstReady) setPage(Number(firstReady));
+      document.getElementById("performance-title")?.focus();
+      return;
     }
     tipsHeading.current?.focus();
   }
@@ -144,7 +145,7 @@ export default function PracticePage() {
         <section className="panel" aria-labelledby="tips-title" aria-busy={busy === page}>
           <h2 id="tips-title" ref={tipsHeading} tabIndex={-1}>{score ? `Practice tips · Page ${page}` : "Practice tips"}</h2>
           <p role="status" hidden={typeof busy !== "number" && !stopMode}>
-            {stopMode === "cancel" ? "Tip generation canceled." : stopMode === "finish" ? "Finished early. You can review completed tips." : typeof busy === "number" ? `Analyzing page ${busy} of ${score.page_count}…` : ""}
+            {stopMode === "cancel" ? "Tip generation canceled." : stopMode === "finish" ? "Finished early. Your completed tips are still available." : typeof busy === "number" ? `Analyzing page ${busy} of ${score.page_count}…` : ""}
           </p>
           {typeof busy === "number" && !stopMode && (
             <div className="page-controls">
@@ -165,6 +166,7 @@ export default function PracticePage() {
           {result?.error && <button className="primary-button" type="button" onClick={() => generateTips(score, [page])} disabled={Boolean(busy)}>Retry this page</button>}
         </section>
       </div>
+      <PerformanceReview post={post} />
     </main>
   );
 }
