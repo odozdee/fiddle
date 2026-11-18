@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import pymupdf
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -191,3 +191,44 @@ def page_practice_tips(file_id: str, page_number: int):
             raise HTTPException(status_code=500, detail="Page analysis failed") from error
 
     return {"page_number": page_number, "practice_tips": tips, "warning": warning}
+
+@app.post("/performance-feedback")
+@app.post("/scores/{file_id}/performance-feedback")
+def performance_feedback(
+    take: UploadFile = File(...),
+    reference: UploadFile | None = File(None),
+    reference_url: str = Form(""),
+    reference_start: float = Form(0, ge=0, le=36000),
+    reference_duration: float | None = Form(None, ge=2, le=60),
+    file_id: str | None = None,
+):
+    from backend.performance import MAX_WAV_BYTES, compare_performances, read_excerpt
+    from backend.youtube_reference import ReferenceUnavailable, reference_excerpt, youtube_id
+
+    if file_id is not None:
+        score_pdf_path(file_id)
+    take_bytes = take.file.read(MAX_WAV_BYTES + 1)
+    if len(take_bytes) > MAX_WAV_BYTES:
+        raise HTTPException(status_code=413, detail="Audio excerpts must be 60 seconds or less.")
+    try:
+        if reference is not None:
+            reference_bytes = reference.file.read(MAX_WAV_BYTES + 1)
+            if len(reference_bytes) > MAX_WAV_BYTES:
+                raise HTTPException(status_code=413, detail="Audio excerpts must be 60 seconds or less.")
+            return compare_performances(take_bytes, reference_bytes)
+        video_id = youtube_id(reference_url)
+        read_excerpt(take_bytes, "Your recording")
+        # Preserve the uploaded excerpt's full duration when requesting the reference.
+        import wave
+        from io import BytesIO
+        with wave.open(BytesIO(take_bytes), "rb") as audio:
+            duration = audio.getnframes() / audio.getframerate()
+        duration = reference_duration if reference_duration is not None else duration
+        result = compare_performances(take_bytes, reference_excerpt(video_id, reference_start, duration))
+        result["reference_video_id"] = video_id
+        result["reference_start"] = reference_start
+        return result
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except ReferenceUnavailable as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
