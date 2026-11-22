@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import PerformanceReview from "./performance-review";
+import Link from "next/link";
+import { useAuth } from "../auth-provider";
+import usePracticeHistory from "./use-practice-history";
 
 const apiUrl = process.env.NEXT_PUBLIC_FIDDLE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -11,7 +14,9 @@ async function post(path, body, signal) {
   try {
     response = await fetch(new URL(path, apiUrl), { method: "POST", body, signal });
   } catch (failure) {
-    if (signal?.aborted) throw failure;
+    if (signal?.aborted) {
+      throw failure;
+    }
     throw new Error("Could not reach Fiddle. Check that the FastAPI server is running.");
   }
   const data = await response.json().catch(() => null);
@@ -23,6 +28,14 @@ async function post(path, body, signal) {
 }
 
 export default function PracticePage() {
+  const { client, user, loading } = useAuth();
+  if (loading) {
+    return <main className="site-width"><p role="status">Opening Practice Studio…</p></main>;
+  }
+  return <PracticeWorkspace key={user?.id ?? "guest"} client={client} user={user} />;
+}
+
+function PracticeWorkspace({ client, user }) {
   const [file, setFile] = useState(null);
   const [score, setScore] = useState(null);
   const [page, setPage] = useState(1);
@@ -32,10 +45,19 @@ export default function PracticePage() {
   const [stopMode, setStopMode] = useState(null);
   const currentRun = useRef(null);
   const tipsHeading = useRef(null);
+  const active = useRef(true);
+  const history = usePracticeHistory(client, user?.id);
 
-  useEffect(() => () => currentRun.current?.abort(), []);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      currentRun.current?.abort();
+    };
+  }, []);
 
   function selectFile(event) {
+    history.reset();
     setFile(event.target.files[0] ?? null);
     setScore(null);
     setPage(1);
@@ -46,7 +68,10 @@ export default function PracticePage() {
 
   async function upload(event) {
     event.preventDefault();
-    if (!file || busy) return;
+    if (!file || busy || history.saving) {
+      return;
+    }
+    history.reset();
     if (file.size > 15 * 1024 * 1024) {
       setError("Choose a PDF up to 15 MB.");
       return;
@@ -61,7 +86,14 @@ export default function PracticePage() {
     body.append("file", file);
     try {
       const uploaded = await post("/upload", body);
+      if (!active.current) {
+        return;
+      }
       setScore(uploaded);
+      await history.prepare(file, uploaded);
+      if (!active.current) {
+        return;
+      }
       const numbers = Array.from({ length: uploaded.page_count }, (_, index) => index + 1);
       await generateTips(uploaded, numbers);
     } catch (failure) {
@@ -72,13 +104,17 @@ export default function PracticePage() {
   }
 
   async function generateTips(uploaded, numbers) {
-    if (currentRun.current || numbers.length === 0) return;
+    if (currentRun.current || numbers.length === 0) {
+      return;
+    }
     const run = new AbortController();
     currentRun.current = run;
     setStopMode(null);
     try {
       for (const number of numbers) {
-        if (run.signal.aborted) break;
+        if (run.signal.aborted) {
+          break;
+        }
         setBusy(number);
         let result;
         try {
@@ -86,8 +122,11 @@ export default function PracticePage() {
         } catch (failure) {
           result = { error: failure.message };
         }
-        if (run.signal.aborted) break;
+        if (run.signal.aborted) {
+          break;
+        }
         setPageResults((previous) => ({ ...previous, [number]: result }));
+        await history.savePage(number, result);
       }
     } finally {
       currentRun.current = null;
@@ -96,7 +135,9 @@ export default function PracticePage() {
   }
 
   function stopTips(mode) {
-    if (!currentRun.current) return;
+    if (!currentRun.current) {
+      return;
+    }
     currentRun.current.abort();
     setStopMode(mode);
     if (mode === "finish") {
@@ -121,10 +162,22 @@ export default function PracticePage() {
       <p>Bring your score and get focused practice tips.</p>
       <form className="panel upload-form" onSubmit={upload}>
         <label htmlFor="score">Sheet music PDF · up to 15 MB</label>
-        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy)} required />
-        <button className="primary-button" disabled={!file || Boolean(busy)}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
+        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving} required />
+        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
       </form>
       {error && <p className="error" role="alert">{error}</p>}
+      {user ? (
+        <div>
+          <p role="status">{history.saving ? "Saving your score and tips…" : history.saveError ? "Some work has not been saved." : history.session ? "Score and completed tips saved to your account." : "New scores and completed tips will save to your account."}</p>
+          <Link href="/history">Practice history</Link>
+          {history.saveError && (
+            <div role="alert">
+              <p className="error">{history.saveError} Your current results are still visible.</p>
+              <button type="button" disabled={Boolean(busy) || history.saving} onClick={() => history.retry(file, score, pageResults)}>Retry saving</button>
+            </div>
+          )}
+        </div>
+      ) : <p><Link href="/login">Sign in</Link> to save future scores and tips.</p>}
       <div className="workspace">
         <section className="panel" aria-labelledby="score-title">
           <h2 id="score-title">Score preview</h2>
