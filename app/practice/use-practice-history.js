@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createPracticeSession, savePracticePage } from "../../lib/practice-history";
+import { createPracticeSession, loadPracticeSession, savePracticePage } from "../../lib/practice-history";
 
 export default function usePracticeHistory(client, userId) {
   const [session, setSession] = useState(null);
@@ -48,6 +48,23 @@ export default function usePracticeHistory(client, userId) {
     await save(() => ensureSession(file, score));
   }
 
+  async function reopen(id, upload, signal) {
+    const loaded = await loadPracticeSession(client, userId, id);
+    signal.throwIfAborted();
+    let score = null;
+    if (loaded.file) {
+      const body = new FormData();
+      body.append("file", loaded.file);
+      score = await upload("/upload", body, signal);
+    }
+    signal.throwIfAborted();
+    currentSession.current = loaded.session;
+    sessionId.current = loaded.session.id;
+    setSession(loaded.session);
+    setSaveError("");
+    return { ...loaded, score };
+  }
+
   async function savePage(number, result) {
     if (!currentSession.current) {
       return;
@@ -69,5 +86,5 @@ export default function usePracticeHistory(client, userId) {
     });
   }
 
-  return { session, saving, saveError, reset, prepare, savePage, retry };
+  return { session, saving, saveError, reset, prepare, reopen, savePage, retry };
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import PerformanceReview from "./performance-review";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../auth-provider";
 import usePracticeHistory from "./use-practice-history";
 
@@ -28,14 +29,26 @@ async function post(path, body, signal) {
 }
 
 export default function PracticePage() {
+  return (
+    <Suspense fallback={<main className="site-width"><p role="status">Opening Practice Studio…</p></main>}>
+      <PracticeEntry />
+    </Suspense>
+  );
+}
+
+function PracticeEntry() {
+  const requestedSession = useSearchParams().get("session");
   const { client, user, loading } = useAuth();
   if (loading) {
     return <main className="site-width"><p role="status">Opening Practice Studio…</p></main>;
   }
-  return <PracticeWorkspace key={user?.id ?? "guest"} client={client} user={user} />;
+  if (requestedSession && !user) {
+    return <main className="site-width"><p><Link href="/login">Sign in</Link> to reopen a saved session.</p></main>;
+  }
+  return <PracticeWorkspace key={`${user?.id ?? "guest"}:${requestedSession ?? "new"}`} client={client} user={user} requestedSession={requestedSession} />;
 }
 
-function PracticeWorkspace({ client, user }) {
+function PracticeWorkspace({ client, user, requestedSession }) {
   const [file, setFile] = useState(null);
   const [score, setScore] = useState(null);
   const [page, setPage] = useState(1);
@@ -47,6 +60,9 @@ function PracticeWorkspace({ client, user }) {
   const tipsHeading = useRef(null);
   const active = useRef(true);
   const history = usePracticeHistory(client, user?.id);
+  const [reopening, setReopening] = useState(Boolean(requestedSession));
+  const [reopenError, setReopenError] = useState("");
+  const [reopenVersion, setReopenVersion] = useState(0);
 
   useEffect(() => {
     active.current = true;
@@ -55,6 +71,35 @@ function PracticeWorkspace({ client, user }) {
       currentRun.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!requestedSession) {
+      return;
+    }
+    const run = new AbortController();
+    setReopening(true);
+    setReopenError("");
+    history.reopen(requestedSession, post, run.signal).then((loaded) => {
+      if (run.signal.aborted) {
+        return;
+      }
+      setFile(loaded.file);
+      setScore(loaded.score);
+      setPageResults(loaded.pageResults);
+      setPage(1);
+    }).catch((failure) => {
+      if (!run.signal.aborted) {
+        setReopenError(failure.message);
+      }
+    }).finally(() => {
+      if (!run.signal.aborted) {
+        setReopening(false);
+      }
+    });
+    return () => {
+      run.abort();
+    };
+  }, [requestedSession, reopenVersion]);
 
   function selectFile(event) {
     history.reset();
@@ -68,7 +113,7 @@ function PracticeWorkspace({ client, user }) {
 
   async function upload(event) {
     event.preventDefault();
-    if (!file || busy || history.saving) {
+    if (!file || busy || history.saving || reopening || requestedSession) {
       return;
     }
     history.reset();
@@ -162,9 +207,17 @@ function PracticeWorkspace({ client, user }) {
       <p>Bring your score and get focused practice tips.</p>
       <form className="panel upload-form" onSubmit={upload}>
         <label htmlFor="score">Sheet music PDF · up to 15 MB</label>
-        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving} required />
-        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
+        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving || reopening || Boolean(requestedSession)} required />
+        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving || reopening || Boolean(requestedSession)}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
       </form>
+      {requestedSession && <p><Link href="/practice">Start a new session</Link></p>}
+      {reopening && <p role="status">Reopening your saved score and tips…</p>}
+      {reopenError && (
+        <div role="alert">
+          <p className="error">{reopenError}</p>
+          <button type="button" onClick={() => setReopenVersion(reopenVersion + 1)}>Try reopening again</button>
+        </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       {user ? (
         <div>
@@ -206,7 +259,7 @@ function PracticeWorkspace({ client, user }) {
               <button type="button" onClick={() => stopTips("finish")}>Finish generating tips early</button>
             </div>
           )}
-          {!busy && remainingPages.length > 0 && (
+          {!busy && !reopening && !reopenError && remainingPages.length > 0 && (
             <button className="primary-button" type="button" onClick={() => generateTips(score, remainingPages)}>Generate remaining tips</button>
           )}
           {!score && <p>Upload a score to generate tips for every page.</p>}
