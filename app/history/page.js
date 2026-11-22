@@ -53,7 +53,7 @@ function SessionList({ client, userId }) {
       <ul style={{ listStyle: "none", padding: 0 }}>
         {sessions.map((session) => (
           <li className="panel" key={session.id} style={{ marginBottom: "1rem" }}>
-            <h2>{session.title}</h2>
+            <h2><Link href={`/practice?session=${encodeURIComponent(session.id)}`}>{session.title}</Link></h2>
             <p>{session.page_count ? `${session.page_count} score pages` : "Recording comparison"}</p>
             <time dateTime={session.created_at}>
               {new Date(session.created_at).toLocaleDateString()}
