@@ -18,12 +18,16 @@ export default function AccountPage() {
   }, []);
 
   async function signOut() {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       const { error } = await client.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     } catch {
       setError("We couldn’t sign you out. Please try again.");
     } finally {
@@ -45,7 +49,8 @@ export default function AccountPage() {
           <>
             <p className="account-email">Signed in as <strong>{user.email}</strong></p>
             <Link className="primary-button" href="/practice">Open Practice Studio <span aria-hidden="true">↗</span></Link>
-            <p className="account-note">Your account is ready. Open Practice Studio to upload a score and get practice tips. Saved practice history will be added in a later update.</p>
+            <p><Link href="/history">Practice history ↗</Link></p>
+            <p className="account-note">Open Practice Studio to upload a score and get practice tips.</p>
             <button className="auth-text-button" type="button" onClick={signOut} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>
           </>
         ) : (
