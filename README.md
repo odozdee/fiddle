@@ -1,4 +1,4 @@
-# Fiddle
+# fiddle
 
 A violin practice app. Upload sheet music for page-by-page practice tips, or compare a recording of your playing with a YouTube reference.
 
