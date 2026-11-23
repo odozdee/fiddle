@@ -9,6 +9,7 @@ import { useAuth } from "../auth-provider";
 import usePracticeHistory from "./use-practice-history";
 import { createPracticeSession } from "../../lib/practice-history";
 import { savePracticeRecording } from "../../lib/practice-recordings";
+import SavedRecordings from "./saved-recordings";
 
 const apiUrl = process.env.NEXT_PUBLIC_FIDDLE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -65,6 +66,7 @@ function PracticeWorkspace({ client, user, requestedSession }) {
   const [comparing, setComparing] = useState(false);
   const [recordingSession, setRecordingSession] = useState(null);
   const recordingSessionId = useRef(null);
+  const [savedRecordings, setSavedRecordings] = useState([]);
   const [reopening, setReopening] = useState(Boolean(requestedSession));
   const [reopenError, setReopenError] = useState("");
   const [reopenVersion, setReopenVersion] = useState(0);
@@ -91,6 +93,7 @@ function PracticeWorkspace({ client, user, requestedSession }) {
       setFile(loaded.file);
       setScore(loaded.score);
       setPageResults(loaded.pageResults);
+      setSavedRecordings(loaded.recordings);
       setPage(1);
     }).catch((failure) => {
       if (!run.signal.aborted) {
@@ -110,6 +113,7 @@ function PracticeWorkspace({ client, user, requestedSession }) {
     history.reset();
     setRecordingSession(null);
     recordingSessionId.current = null;
+    setSavedRecordings([]);
     setFile(event.target.files[0] ?? null);
     setScore(null);
     setPage(1);
@@ -126,6 +130,7 @@ function PracticeWorkspace({ client, user, requestedSession }) {
     history.reset();
     setRecordingSession(null);
     recordingSessionId.current = null;
+    setSavedRecordings([]);
     if (file.size > 15 * 1024 * 1024) {
       setError("Choose a PDF up to 15 MB.");
       return;
@@ -203,7 +208,9 @@ function PracticeWorkspace({ client, user, requestedSession }) {
       session = await createPracticeSession(client, user.id, null, null, recordingSessionId.current);
       setRecordingSession(session);
     }
-    return savePracticeRecording(client, user.id, session.id, recording);
+    const saved = await savePracticeRecording(client, user.id, session.id, recording);
+    setSavedRecordings((previous) => [saved, ...previous.filter((item) => item.id !== saved.id)]);
+    return saved;
   }
 
   function stopTips(mode) {
@@ -301,6 +308,10 @@ function PracticeWorkspace({ client, user, requestedSession }) {
       </div>
       <PerformanceReview key={score?.file_id ?? "standalone"} post={post} canSave={Boolean(user)} onSave={saveComparison}
         disabled={reopening || Boolean(reopenError) || busy === "upload"} onBusyChange={setComparing} />
+      {user && (
+        <SavedRecordings key={history.session?.id ?? recordingSession?.id ?? "new"}
+          client={client} userId={user.id} recordings={savedRecordings} />
+      )}
     </main>
   );
 }
