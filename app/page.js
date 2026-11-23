@@ -1,5 +1,12 @@
 import Link from "next/link";
 
+const steps = [
+  ["Bring your score", "Choose a PDF of the violin sheet music you’re working on.", "Use a clear scan or digital edition up to 15 MB. Fiddle starts reading as soon as you upload it."],
+  ["Find the tricky passages", "Fiddle reads each page and looks for measures worth slowing down on.", "If the extracted notes look uncertain, compare them with the original page before working on the passage."],
+  ["Practice with the score open", "Turn through the pages and read the tips beside the original notation.", "Try one suggestion at a time, then play the phrase again in context."],
+  ["Compare your playing", "Upload your take and choose a YouTube reference of the same passage.", "Set the reference excerpt, compare pacing and pitch patterns, then watch an embedded lesson for suggested pitch or rhythm work."],
+];
+
 export default function HomePage() {
   return (
     <main className="site-width home">
@@ -48,6 +55,25 @@ export default function HomePage() {
             </div>
           </figcaption>
         </figure>
+      </section>
+      <section id="how-it-works" className="home-guide" aria-labelledby="guide-title">
+        <h2 id="guide-title">How Fiddle works</h2>
+        <p className="guide-description">Upload your score. Fiddle reads it and gives you practice tips along with an option to compare your playing.</p>
+        <ol className="home-steps">
+          {steps.map(([title, description, detail], index) => (
+            <li key={title}>
+              <details name="practice-steps">
+                <summary>
+                  <span className="panel-number" aria-hidden="true">0{index + 1}</span>
+                  <span className="step-title">{title}</span>
+                  <span className="step-description">{description}</span>
+                  <span className="step-toggle" aria-hidden="true">+</span>
+                </summary>
+                <p>{detail}</p>
+              </details>
+            </li>
+          ))}
+        </ol>
       </section>
     </main>
   );
