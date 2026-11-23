@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../auth-provider";
 import usePracticeHistory from "./use-practice-history";
+import { createPracticeSession } from "../../lib/practice-history";
+import { savePracticeRecording } from "../../lib/practice-recordings";
 
 const apiUrl = process.env.NEXT_PUBLIC_FIDDLE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -60,6 +62,9 @@ function PracticeWorkspace({ client, user, requestedSession }) {
   const tipsHeading = useRef(null);
   const active = useRef(true);
   const history = usePracticeHistory(client, user?.id);
+  const [comparing, setComparing] = useState(false);
+  const [recordingSession, setRecordingSession] = useState(null);
+  const recordingSessionId = useRef(null);
   const [reopening, setReopening] = useState(Boolean(requestedSession));
   const [reopenError, setReopenError] = useState("");
   const [reopenVersion, setReopenVersion] = useState(0);
@@ -103,6 +108,8 @@ function PracticeWorkspace({ client, user, requestedSession }) {
 
   function selectFile(event) {
     history.reset();
+    setRecordingSession(null);
+    recordingSessionId.current = null;
     setFile(event.target.files[0] ?? null);
     setScore(null);
     setPage(1);
@@ -113,10 +120,12 @@ function PracticeWorkspace({ client, user, requestedSession }) {
 
   async function upload(event) {
     event.preventDefault();
-    if (!file || busy || history.saving || reopening || requestedSession) {
+    if (!file || busy || history.saving || reopening || requestedSession || comparing) {
       return;
     }
     history.reset();
+    setRecordingSession(null);
+    recordingSessionId.current = null;
     if (file.size > 15 * 1024 * 1024) {
       setError("Choose a PDF up to 15 MB.");
       return;
@@ -179,6 +188,24 @@ function PracticeWorkspace({ client, user, requestedSession }) {
     }
   }
 
+  async function saveComparison(recording) {
+    if (!user || !client) {
+      throw new Error("Sign in to save your recording.");
+    }
+    if (score && !history.session) {
+      throw new Error("Save the score and tips first, then retry saving this comparison.");
+    }
+    let session = history.session ?? recordingSession;
+    if (!session) {
+      if (!recordingSessionId.current) {
+        recordingSessionId.current = crypto.randomUUID();
+      }
+      session = await createPracticeSession(client, user.id, null, null, recordingSessionId.current);
+      setRecordingSession(session);
+    }
+    return savePracticeRecording(client, user.id, session.id, recording);
+  }
+
   function stopTips(mode) {
     if (!currentRun.current) {
       return;
@@ -207,8 +234,8 @@ function PracticeWorkspace({ client, user, requestedSession }) {
       <p>Bring your score and get focused practice tips.</p>
       <form className="panel upload-form" onSubmit={upload}>
         <label htmlFor="score">Sheet music PDF · up to 15 MB</label>
-        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving || reopening || Boolean(requestedSession)} required />
-        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving || reopening || Boolean(requestedSession)}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
+        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving || reopening || Boolean(requestedSession) || comparing} required />
+        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving || reopening || Boolean(requestedSession) || comparing}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
       </form>
       {requestedSession && <p><Link href="/practice">Start a new session</Link></p>}
       {reopening && <p role="status">Reopening your saved score and tips…</p>}
@@ -272,7 +299,8 @@ function PracticeWorkspace({ client, user, requestedSession }) {
           {result?.error && <button className="primary-button" type="button" onClick={() => generateTips(score, [page])} disabled={Boolean(busy)}>Retry this page</button>}
         </section>
       </div>
-      <PerformanceReview post={post} />
+      <PerformanceReview key={score?.file_id ?? "standalone"} post={post} canSave={Boolean(user)} onSave={saveComparison}
+        disabled={reopening || Boolean(reopenError) || busy === "upload"} onBusyChange={setComparing} />
     </main>
   );
 }

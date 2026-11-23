@@ -8,14 +8,20 @@ const SAMPLE_RATE = 22050;
 function youtubeVideo(value) {
   try {
     const url = new URL(value);
-    if (url.protocol !== "https:") return null;
+    if (url.protocol !== "https:") {
+      return null;
+    }
     const [, route, videoId] = url.pathname.split("/");
     let id = null;
     if (url.hostname === "youtu.be") {
       id = route;
     } else if (["youtube.com", "www.youtube.com", "m.youtube.com"].includes(url.hostname)) {
-      if (route === "watch") id = url.searchParams.get("v");
-      if (["shorts", "live", "embed"].includes(route)) id = videoId;
+      if (route === "watch") {
+        id = url.searchParams.get("v");
+      }
+      if (["shorts", "live", "embed"].includes(route)) {
+        id = videoId;
+      }
     }
     return /^[a-zA-Z0-9_-]{11}$/.test(id ?? "") ? `https://www.youtube.com/watch?v=${id}` : null;
   } catch {
@@ -24,7 +30,9 @@ function youtubeVideo(value) {
 }
 
 async function wavExcerpt(blob, label) {
-  if (blob.size > 15 * 1024 * 1024) throw new Error(`${label} must be under 15 MB.`);
+  if (blob.size > 15 * 1024 * 1024) {
+    throw new Error(`${label} must be under 15 MB.`);
+  }
   const context = new AudioContext({ sampleRate: SAMPLE_RATE });
   try {
     let audio;
@@ -64,7 +72,7 @@ async function wavExcerpt(blob, label) {
   }
 }
 
-export default function PerformanceReview({ post }) {
+export default function PerformanceReview({ post, canSave = false, onSave, disabled = false, onBusyChange }) {
   const [videoUrl, setVideoUrl] = useState("");
   const [referenceStart, setReferenceStart] = useState("0");
   const [referenceDuration, setReferenceDuration] = useState("30");
@@ -73,6 +81,9 @@ export default function PerformanceReview({ post }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [unsavedRecording, setUnsavedRecording] = useState(null);
+  const [saved, setSaved] = useState(false);
   const video = youtubeVideo(videoUrl);
   const videoId = video && new URL(video).searchParams.get("v");
 
@@ -86,11 +97,45 @@ export default function PerformanceReview({ post }) {
     return () => URL.revokeObjectURL(url);
   }, [take]);
 
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
+
+  async function persist(recording) {
+    setSaveError("");
+    try {
+      await onSave(recording);
+      setSaved(true);
+      setUnsavedRecording(null);
+    } catch (failure) {
+      setSaveError(failure.message);
+      setUnsavedRecording(recording);
+    }
+  }
+
+  async function retrySave() {
+    if (!unsavedRecording || busy) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await persist(unsavedRecording);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function analyze(event) {
     event.preventDefault();
-    if (busy || !take || !video) return;
+    if (busy || disabled || !take || !video) {
+      return;
+    }
     setError("");
     setResult(null);
+    setSaveError("");
+    setUnsavedRecording(null);
+    setSaved(false);
     setBusy(true);
     try {
       const body = new FormData();
@@ -101,6 +146,16 @@ export default function PerformanceReview({ post }) {
       body.append("reference_duration", referenceDuration);
       const feedback = await post("/performance-feedback", body);
       setResult(feedback);
+      if (canSave && onSave) {
+        await persist({
+          id: crypto.randomUUID(),
+          audio,
+          feedback,
+          referenceUrl: video,
+          referenceStart,
+          referenceDuration,
+        });
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -116,25 +171,25 @@ export default function PerformanceReview({ post }) {
         <div style={{ display: "grid", gap: "0.75rem", overflowWrap: "anywhere" }}>
           <label>
             Your recording · 2–60 seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm" disabled={busy}
+            <input style={{ display: "block", maxWidth: "100%" }} type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm" disabled={busy || disabled}
               onChange={(event) => { setTake(event.target.files[0] ?? null); setResult(null); setError(""); }} required />
             <small>Up to 15 MB. Choose a format your browser can play.</small>
           </label>
           <label>
             YouTube reference
-            <input style={{ display: "block", maxWidth: "100%" }} type="url" value={videoUrl} placeholder="https://www.youtube.com/watch?v=…" disabled={busy}
+            <input style={{ display: "block", maxWidth: "100%" }} type="url" value={videoUrl} placeholder="https://www.youtube.com/watch?v=…" disabled={busy || disabled}
               onChange={(event) => { setVideoUrl(event.target.value); setResult(null); }} required />
             {videoUrl && !video && <small>Enter a valid YouTube video link.</small>}
           </label>
           <label>
             Reference start time · seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="0" max="36000" step="1" value={referenceStart} disabled={busy}
+            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="0" max="36000" step="1" value={referenceStart} disabled={busy || disabled}
               onChange={(event) => { setReferenceStart(event.target.value); setResult(null); }} required />
             <small>Find the first note of the passage you played.</small>
           </label>
           <label>
             Reference excerpt length · seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="2" max="60" step="1" value={referenceDuration} disabled={busy}
+            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="2" max="60" step="1" value={referenceDuration} disabled={busy || disabled}
               onChange={(event) => { setReferenceDuration(event.target.value); setResult(null); }} required />
             <small>End at the same musical point as your take, even if the tempo differs.</small>
           </label>
@@ -144,10 +199,21 @@ export default function PerformanceReview({ post }) {
           loading="lazy" allow="encrypted-media; picture-in-picture" allowFullScreen />}
         {playback && <audio style={{ display: "block", maxWidth: "100%", marginBlock: "1rem" }} controls src={playback} aria-label="Play your uploaded recording" />}
         <div className="performance-actions">
-          <button className="primary-button" type="submit" disabled={!take || !video || busy}>Compare performances</button>
+          <button className="primary-button" type="submit" disabled={!take || !video || busy || disabled}>Compare performances</button>
         </div>
         {busy && <p role="status">Retrieving the YouTube excerpt and comparing performances…</p>}
         {error && <p className="error" role="alert">{error}</p>}
+        {result && canSave && (
+          <div role="status">
+            {saved && <p>Recording and feedback saved to your account.</p>}
+            {saveError && (
+              <>
+                <p className="error">{saveError} Your feedback is still available below.</p>
+                <button type="button" onClick={retrySave} disabled={busy || disabled}>Retry saving comparison</button>
+              </>
+            )}
+          </div>
+        )}
         {result && (
           <div className="performance-result" role="status">
             <p><strong>Pacing</strong> · Your take {result.take_seconds}s · Reference {result.reference_seconds}s</p>
