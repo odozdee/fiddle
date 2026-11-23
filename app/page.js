@@ -149,6 +149,21 @@ export default function HomePage() {
         </figure>
       </section>
 
+      <footer className="home-footer">
+        <div className="footer-invitation">
+          <div><p className="eyebrow">YOUR NEXT PRACTICE SESSION</p><h2>Bring the music.<br /><em>Find your focus.</em></h2></div>
+          <Link className="home-cta" href="/practice">Open practice studio</Link>
+        </div>
+        <div className="footer-details">
+          <div className="footer-about">
+            <Link href="/" className="footer-wordmark" aria-label="Fiddle home">Fiddle<span>.</span></Link>
+            <p>A practice companion for violinists, from the first look at a score to listening back.</p>
+          </div>
+          <nav aria-label="Footer navigation"><span className="eyebrow">EXPLORE</span><Link href="/">Home</Link><Link href="/practice">Practice studio</Link></nav>
+          <div className="footer-note"><span aria-hidden="true">♫</span><p>Sheet music on the stand.<br />A little more focus in the practice room.</p></div>
+        </div>
+        <div className="footer-bottom"><span>Fiddle</span></div>
+      </footer>
     </main>
   );
 }
