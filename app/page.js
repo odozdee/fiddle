@@ -1,12 +1,17 @@
 import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main>
-      <p className="eyebrow">VIOLIN PRACTICE</p>
-      <h1>Fiddle</h1>
-      <p>Upload your sheet music, read the score, and find passages to practice.</p>
-      <Link className="primary-button" href="/practice">Open Practice Studio ↗</Link>
+    <main className="site-width home">
+      <section className="hero home-hero" aria-labelledby="home-title">
+        <div>
+          <p className="eyebrow hero-label"><span />AI VIOLIN PRACTICE ASSISTANT</p>
+          <h1 id="home-title">Make every<br />measure <em>count.</em></h1>
+          <p className="hero-description">Upload your score, receive helpful tips, and compare your recordings with an excerpt</p>
+          <Link className="home-cta" href="/practice">Open Practice Studio</Link>
+        </div>
+
+      </section>
     </main>
   );
 }

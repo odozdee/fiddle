@@ -79,3 +79,30 @@ body:has(.auth-form-page) .topbar { display: none; }
 .auth-form-page { display: grid; align-content: center; min-height: 100svh; max-width: 29rem; padding-block: 2rem; }
 .auth-form-page .auth-card h1 { margin: 0 0 1.6rem; font: 400 2rem Georgia, serif; }
 .auth-form-page .primary-button { width: 100%; }
+
+.hero { position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.85fr); gap: clamp(1.75rem, 5vw, 5.25rem); align-items: center; padding: clamp(2rem, 5vw, 4.75rem); margin-top: 2rem; border-radius: 1.5rem; background: #352136; color: #fff7ec; }
+.hero-staff { position: absolute; z-index: -1; width: min(85%, 52rem); height: auto; right: -5rem; bottom: -9rem; color: #f4b994; opacity: 0.23; stroke: currentColor; stroke-width: 1; }
+.hero-label { color: #f5bf9e; }
+.hero-label span { width: 1.5rem; height: 1px; background: currentColor; }
+.hero h1 { margin: 0.75rem 0 1.1rem; font: 400 clamp(3rem, 7vw, 6.5rem)/0.94 Georgia, serif; letter-spacing: -0.065em; }
+.hero h1 em { font-weight: 400; color: #f9be9a; }
+.hero-description { max-width: 27rem; margin: 0; color: #e3d4de; font-size: 1.02rem; line-height: 1.65; }
+@media (max-width: 52rem) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-staff { bottom: -5rem; }
+  .upload-card { max-width: 28rem; width: 100%; }
+}
+@media (max-width: 43rem) {
+  .site-width { width: calc(100% - 1.5rem); }
+  .topbar-inner { min-height: 4.7rem; }
+  .hero { margin-top: 0.9rem; padding: 1.4rem; border-radius: 1rem; }
+  .hero h1 { font-size: clamp(2.7rem, 10vw, 4.4rem); }
+  .studio { margin-top: 1.85rem; }
+  .studio-heading { align-items: flex-start; flex-direction: column; }
+  .workspace { grid-template-columns: 1fr; }
+}
+.home-hero { background: radial-gradient(ellipse at 90% 20%, #614057 0%, #352136 66%); }
+.home-cta { display: inline-flex; align-items: center; gap: 1rem; margin-top: 1.55rem; padding: 0.8rem 1.05rem; border-radius: 0.6rem; background: #f9be9a; color: #352136; font-size: 0.9rem; font-weight: 800; text-decoration: none; }
+.home-cta:hover { background: #ffd1ae; }
+.footer-invitation .home-cta { margin: 0; flex-shrink: 0; }
+.history-heading .home-cta { margin: 0; }
