@@ -36,25 +36,18 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="site-width auth-page account-page">
-      <section className="auth-story">
-        <span className="auth-music" aria-hidden="true">♫</span>
-        <p className="eyebrow">YOUR FIDDLE ACCOUNT</p>
-        <h1>Back to the music.</h1>
-        <p>A little focus. A phrase at a time.</p>
-      </section>
+    <main className="site-width account-page">
       <section className="auth-card" aria-labelledby="account-title">
-        <h2 id="account-title">My account</h2>
+        <h1 id="account-title">My account</h1>
         {loading ? <p role="status">Checking your account…</p> : user ? (
           <>
             <p className="account-email">Signed in as <strong>{user.email}</strong></p>
             <Link className="primary-button" href="/practice">Open Practice Studio <span aria-hidden="true">↗</span></Link>
-            <p><Link href="/history">Practice history ↗</Link></p>
-            <p className="account-note">Open Practice Studio to upload a score and get practice tips.</p>
+            <Link className="account-history-link" href="/history">Open practice history ↗</Link>
             <button className="auth-text-button" type="button" onClick={signOut} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>
           </>
         ) : (
-          <p>{client ? "Sign in to view your account." : "Accounts aren’t available yet."} <Link href="/login">Sign in</Link> or <Link href="/practice">continue practicing</Link>.</p>
+          <p>{client ? "Sign in to view your account." : "Accounts aren’t available yet."} <Link href="/login">Sign in</Link>.</p>
         )}
         {(error || sessionError) && <p className="error" role="alert">{error || sessionError}</p>}
       </section>

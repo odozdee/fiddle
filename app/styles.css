@@ -338,3 +338,9 @@ body:has(.auth-form-page) .topbar { display: none; }
 .auth-form-page { display: grid; align-content: center; min-height: 100svh; max-width: 29rem; padding-block: 2rem; }
 .auth-form-page .auth-card h1 { margin: 0 0 1.6rem; font: 400 2rem Georgia, serif; }
 .auth-form-page .primary-button { width: 100%; }
+
+body:has(.account-page) .topbar { display: none; }
+.account-page { display: grid; align-content: center; min-height: 100svh; max-width: 29rem; padding-block: 2rem; }
+.account-page .auth-card h1 { margin: 0 0 1.6rem; font: 400 2rem Georgia, serif; }
+.account-page .primary-button { width: 100%; }
+.account-page .auth-text-button { display: block; margin-top: 1rem; }
