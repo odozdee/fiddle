@@ -164,42 +164,47 @@ export default function PerformanceReview({ post, canSave = false, onSave, disab
   }
 
   return (
-    <section className="panel" style={{ marginTop: "1rem" }} aria-labelledby="performance-title">
-      <h2 id="performance-title" tabIndex={-1}>Compare your playing</h2>
+    <section className="panel performance-panel" aria-labelledby="performance-title">
+      <div className="panel-heading">
+        <div className="panel-title">
+          <span className="panel-number" aria-hidden="true">03</span>
+          <h3 id="performance-title" tabIndex={-1}>Compare your playing</h3>
+        </div>
+      </div>
       <form className="performance-form" onSubmit={analyze}>
         <p>Upload your playing and choose a YouTube performance of the same passage. Set the start time to where your excerpt begins in the video. Use a reference you have permission to analyze.</p>
-        <div style={{ display: "grid", gap: "0.75rem", overflowWrap: "anywhere" }}>
+        <div className="performance-fields">
           <label>
             Your recording · 2–60 seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm" disabled={busy || disabled}
+            <input type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm" disabled={busy || disabled}
               onChange={(event) => { setTake(event.target.files[0] ?? null); setResult(null); setError(""); }} required />
             <small>Up to 15 MB. Choose a format your browser can play.</small>
           </label>
           <label>
             YouTube reference
-            <input style={{ display: "block", maxWidth: "100%" }} type="url" value={videoUrl} placeholder="https://www.youtube.com/watch?v=…" disabled={busy || disabled}
+            <input type="url" value={videoUrl} placeholder="https://www.youtube.com/watch?v=…" disabled={busy || disabled}
               onChange={(event) => { setVideoUrl(event.target.value); setResult(null); }} required />
             {videoUrl && !video && <small>Enter a valid YouTube video link.</small>}
           </label>
           <label>
             Reference start time · seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="0" max="36000" step="1" value={referenceStart} disabled={busy || disabled}
+            <input type="number" min="0" max="36000" step="1" value={referenceStart} disabled={busy || disabled}
               onChange={(event) => { setReferenceStart(event.target.value); setResult(null); }} required />
             <small>Find the first note of the passage you played.</small>
           </label>
           <label>
             Reference excerpt length · seconds
-            <input style={{ display: "block", maxWidth: "100%" }} type="number" min="2" max="60" step="1" value={referenceDuration} disabled={busy || disabled}
+            <input type="number" min="2" max="60" step="1" value={referenceDuration} disabled={busy || disabled}
               onChange={(event) => { setReferenceDuration(event.target.value); setResult(null); }} required />
             <small>End at the same musical point as your take, even if the tempo differs.</small>
           </label>
         </div>
-        {video && <iframe style={{ display: "block", width: "100%", maxWidth: "42rem", aspectRatio: "16 / 9", border: 0, marginBlock: "1rem" }} title="Your YouTube reference"
+        {video && <iframe className="lesson-video" title="Your YouTube reference"
           src={`https://www.youtube-nocookie.com/embed/${videoId}?start=${Math.floor(Number(referenceStart) || 0)}`}
           loading="lazy" allow="encrypted-media; picture-in-picture" allowFullScreen />}
-        {playback && <audio style={{ display: "block", maxWidth: "100%", marginBlock: "1rem" }} controls src={playback} aria-label="Play your uploaded recording" />}
+        {playback && <audio controls src={playback} aria-label="Play your uploaded recording" />}
         <div className="performance-actions">
-          <button className="primary-button" type="submit" disabled={!take || !video || busy || disabled}>Compare performances</button>
+          <button type="submit" disabled={!take || !video || busy || disabled}>Compare performances</button>
         </div>
         {busy && <p role="status">Retrieving the YouTube excerpt and comparing performances…</p>}
         {error && <p className="error" role="alert">{error}</p>}
@@ -231,7 +236,7 @@ export default function PerformanceReview({ post, canSave = false, onSave, disab
             <article key={lesson.video_id}>
               <h4>{lesson.title}</h4>
               <p>{lesson.teacher} · {lesson.reason}</p>
-              <iframe style={{ display: "block", width: "100%", maxWidth: "42rem", aspectRatio: "16 / 9", border: 0, marginBlock: "1rem" }} title={lesson.title}
+              <iframe className="lesson-video" title={lesson.title}
                 src={`https://www.youtube-nocookie.com/embed/${lesson.video_id}`}
                 loading="lazy" allow="encrypted-media; picture-in-picture" allowFullScreen />
               <a href={`https://www.youtube.com/watch?v=${lesson.video_id}`} target="_blank" rel="noreferrer">
