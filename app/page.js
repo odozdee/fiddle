@@ -7,6 +7,30 @@ const steps = [
   ["Compare your playing", "Upload your take and choose a YouTube reference of the same passage.", "Set the reference excerpt, compare pacing and pitch patterns, then watch an embedded lesson for suggested pitch or rhythm work."],
 ];
 
+const stages = [
+  ["Prepare the page", "PyMuPDF", "Splits the PDF into pages and renders the original notation for the preview.", "document"],
+  ["Read the notation", "Audiveris + music21", "Audiveris recognizes the score. music21 reads the resulting MusicXML as measures, notes, rhythms, and voices.", "notation"],
+  ["Draft the advice", "Claude", "Uses the page image and extracted notation together to suggest exercises for passages it can read confidently.", "spark"],
+  ["Pair it with the score", "Fiddle", "Shows each page beside its own tips so you can check the notation as you practice.", "desk"],
+  ["Compare performances", "Librosa", "Aligns your uploaded take with the chosen YouTube excerpt and compares pacing and pitch patterns.", "notation"],
+  ["Find a lesson", "Fiddle", "Matches suggested pitch or rhythm work to an embedded violin tutorial you can watch in the practice studio.", "spark"],
+];
+
+function StageIcon({ name }) {
+  const paths = {
+    document: "M6 3h8l4 4v14H6z M14 3v5h4 M9 12h6 M9 16h6",
+    notation: "M9 18V7l10-3v11 M9 10l10-3 M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0 M19 15a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0",
+    spark: "M12 3l2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4z",
+    desk: "M3 5h18v14H3z M12 5v14 M6 9h3 M6 13h3 M15 9h3 M15 13h3",
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d={paths[name]} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   return (
     <main className="site-width home">
@@ -75,6 +99,25 @@ export default function HomePage() {
           ))}
         </ol>
       </section>
+      <section className="system-overview" aria-labelledby="system-title">
+        <p className="eyebrow">BEHIND THE MUSIC</p>
+        <h2 id="system-title">What happens to your score</h2>
+        <p className="guide-description">Follow the full practice studio workflow, from the uploaded score to audio feedback and a lesson to work with.</p>
+        <ol className="system-stages">
+          {stages.map(([title, tool, description, icon], index) => (
+            <li key={title}>
+              <div className="stage-marker">
+                <span><StageIcon name={icon} /></span>
+                <small>0{index + 1}</small>
+              </div>
+              <h3>{title}</h3>
+              <span className="stage-tool">{tool}</span>
+              <p>{description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
     </main>
   );
 }
