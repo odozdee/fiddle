@@ -11,6 +11,43 @@ export default function HomePage() {
           <Link className="home-cta" href="/practice">Open Practice Studio</Link>
         </div>
 
+        <figure className="home-example">
+          <div className="violin-study" aria-hidden="true">
+            <span>FIDDLE</span>
+            <svg viewBox="0 0 400 300" fill="none">
+              <defs>
+                <linearGradient id="varnish" x1="90" y1="160" x2="220" y2="270" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#edac72" />
+                  <stop offset=".48" stopColor="#a95135" />
+                  <stop offset="1" stopColor="#4e2730" />
+                </linearGradient>
+              </defs>
+              <circle cx="208" cy="146" r="122" stroke="#e9ae872e" />
+              <circle cx="208" cy="146" r="99" stroke="#e9ae8720" />
+              <path d="M29 210H375M29 222H375M29 234H375M29 246H375M29 258H375" stroke="#f9c09625" />
+              <g transform="rotate(31 205 156)" strokeLinejoin="round">
+                <path d="M193 143C182 149 168 145 158 158C147 173 152 185 164 196C175 205 172 216 159 221C139 228 132 247 139 266C147 287 170 294 200 294C230 294 253 287 261 266C268 247 261 228 241 221C228 216 225 205 236 196C248 185 253 173 242 158C232 145 218 149 207 143Z"
+                  fill="url(#varnish)" stroke="#ffcb9a" strokeWidth="2" />
+                <path d="M190 151C176 153 165 153 160 168C156 181 164 188 172 196C185 211 178 222 160 229C143 238 142 253 148 267C154 282 174 288 200 288C226 288 246 282 252 267C258 253 257 238 240 229C222 222 215 211 228 196C236 188 244 181 240 168C235 153 224 153 210 151"
+                  stroke="#ffd5a4" strokeOpacity=".55" />
+                <path d="M194 54H206L211 197H189Z" fill="#38232d" stroke="#e0a47c" />
+                <path d="M194 58L191 40Q193 25 201 25Q214 27 208 41L206 58Z" fill="#b76443" stroke="#ffcb9a" />
+                <path d="M184 44H194M206 36H215M186 51H195M205 49H215" stroke="#ffd1a7" strokeWidth="3" strokeLinecap="round" />
+                <path d="M180 205C172 209 181 218 176 228M220 205C228 209 219 218 224 228" stroke="#512832" strokeWidth="3" strokeLinecap="round" />
+                <path d="M188 222Q200 215 212 222L209 231H191Z" fill="#ffcc95" />
+                <path d="M193 240H207L214 274Q200 282 186 274Z" fill="#38232d" stroke="#e0a47c" />
+                <path d="M197 54L195 258M199 54L198 258M201 54L202 258M203 54L205 258" stroke="#ffe2bc" strokeWidth=".6" />
+              </g>
+            </svg>
+          </div>
+          <figcaption className="example-tip">
+            <span className="coach-mark" aria-hidden="true">✦</span>
+            <div>
+              <span className="eyebrow">EXAMPLE PRACTICE TIP</span>
+              <p>Play the string crossings slowly, then try the full phrase with the same bow motion.</p>
+            </div>
+          </figcaption>
+        </figure>
       </section>
     </main>
   );

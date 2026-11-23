@@ -106,3 +106,14 @@ body:has(.auth-form-page) .topbar { display: none; }
 .home-cta:hover { background: #ffd1ae; }
 .footer-invitation .home-cta { margin: 0; flex-shrink: 0; }
 .history-heading .home-cta { margin: 0; }
+.coach-mark { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #f8e8da; color: #945035; }
+.home-example { min-width: 0; margin: 0; }
+.violin-study { position: relative; overflow: hidden; border: 1px solid #edba8c47; border-radius: 1rem; background: radial-gradient(ellipse at center, #704454, #3a263b 72%); box-shadow: 0 12px 36px #22122155; }
+.violin-study > span { position: absolute; top: 1rem; left: 1rem; color: #ffd0ae; font-size: 0.62rem; font-weight: 750; letter-spacing: 0.15em; }
+.violin-study svg { display: block; width: 100%; }
+.example-tip { position: relative; display: flex; align-items: flex-start; gap: 0.7rem; margin: -0.8rem 0 0 1rem; padding: 0.9rem; border: 1px solid #ead7d6; border-radius: 0.8rem; background: var(--paper); color: var(--ink); box-shadow: 0 8px 24px #22122138; }
+.example-tip .coach-mark { flex: 0 0 2.4rem; }
+.example-tip p { margin: 0.25rem 0 0; font-size: 0.86rem; line-height: 1.5; }
+@media (max-width: 52rem) {
+  .home-example { width: min(100%, 25rem); margin: 0 0 0.6rem 0.25rem; }
+}
