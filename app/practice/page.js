@@ -61,6 +61,7 @@ function PracticeWorkspace({ client, user, requestedSession }) {
   const [stopMode, setStopMode] = useState(null);
   const currentRun = useRef(null);
   const tipsHeading = useRef(null);
+  const recordingSection = useRef(null);
   const active = useRef(true);
   const history = usePracticeHistory(client, user?.id);
   const [comparing, setComparing] = useState(false);
@@ -220,7 +221,8 @@ function PracticeWorkspace({ client, user, requestedSession }) {
     currentRun.current.abort();
     setStopMode(mode);
     if (mode === "finish") {
-      document.getElementById("performance-title")?.focus();
+      recordingSection.current?.focus();
+      recordingSection.current?.scrollIntoView({ block: "start" });
       return;
     }
     tipsHeading.current?.focus();
@@ -234,84 +236,208 @@ function PracticeWorkspace({ client, user, requestedSession }) {
     ? score.preview_url
     : `/scores/${encodeURIComponent(score.file_id)}/pages/${page}/preview`);
 
+  const failedPages = score
+    ? Array.from({ length: score.page_count }, (_, index) => index + 1).filter((number) => pageResults[number]?.error)
+    : [];
+  const analyzing = typeof busy === "number" && !stopMode;
+  const pageIsAnalyzing = analyzing && busy === page;
+  const completedPages = Object.keys(pageResults).length;
+  const progressText = busy === "upload"
+    ? "Uploading your score…"
+    : analyzing
+      ? `Analyzing page ${busy} of ${score.page_count}…`
+      : score && (stopMode
+        ? `${stopMode === "cancel" ? "Generation canceled" : "Finished early"} · ${completedPages} of ${score.page_count} pages processed.`
+        : failedPages.length
+        ? `Analysis finished. ${failedPages.length} of ${score.page_count} pages failed.`
+        : remainingPages.length
+          ? `${completedPages} of ${score.page_count} pages processed. Generate remaining tips whenever you’re ready.`
+          : "Analysis complete for all pages.");
+
   return (
-    <main className="site-width">
-      <p className="eyebrow">VIOLIN PRACTICE</p>
-      <h1>Practice Studio</h1>
-      <p>Bring your score and get focused practice tips.</p>
-      <form className="panel upload-form" onSubmit={upload}>
-        <label htmlFor="score">Sheet music PDF · up to 15 MB</label>
-        <input id="score" type="file" accept=".pdf,application/pdf" onChange={selectFile} disabled={Boolean(busy) || history.saving || reopening || Boolean(requestedSession) || comparing} required />
-        <button className="primary-button" disabled={!file || Boolean(busy) || history.saving || reopening || Boolean(requestedSession) || comparing}>{busy === "upload" ? "Uploading…" : "Upload score"}</button>
-      </form>
-      {requestedSession && <p><Link href="/practice">Start a new session</Link></p>}
-      {reopening && <p role="status">Reopening your saved score and tips…</p>}
-      {reopenError && (
-        <div role="alert">
-          <p className="error">{reopenError}</p>
-          <button type="button" onClick={() => setReopenVersion(reopenVersion + 1)}>Try reopening again</button>
+    <>
+      <main className="site-width">
+        {requestedSession && <p><Link href="/practice">Start a new session</Link></p>}
+        <div className="practice-save-bar">
+          <div role="status">{reopening ? "Reopening your saved practice…" : user ? history.saving ? "Saving your practice…" : history.saveError ? "Some work has not been saved." : history.session ? "Saved to your account." : "Your new sessions will save to your account." : "Guest practice is not saved. Sign in to keep future sessions."}</div>
+          {user ? <Link href="/history">Practice history ↗</Link> : <Link href="/login">Sign in ↗</Link>}
         </div>
-      )}
-      {error && <p className="error" role="alert">{error}</p>}
-      {user ? (
-        <div>
-          <p role="status">{history.saving ? "Saving your score and tips…" : history.saveError ? "Some work has not been saved." : history.session ? "Score and completed tips saved to your account." : "New scores and completed tips will save to your account."}</p>
-          <Link href="/history">Practice history</Link>
-          {history.saveError && (
-            <div role="alert">
-              <p className="error">{history.saveError} Your current results are still visible.</p>
-              <button type="button" disabled={Boolean(busy) || history.saving} onClick={() => history.retry(file, score, pageResults)}>Retry saving</button>
-            </div>
-          )}
-        </div>
-      ) : <p><Link href="/login">Sign in</Link> to save future scores and tips.</p>}
-      <div className="workspace">
-        <section className="panel" aria-labelledby="score-title">
-          <h2 id="score-title">Score preview</h2>
-          {score ? (
-            <>
-              <p>{file.name} · Page {page} of {score.page_count}</p>
-              <a href={new URL(`/files/${encodeURIComponent(score.file_id)}.pdf`, apiUrl).href}>Open PDF ↗</a>
-              {score.page_count > 1 && (
-                <nav className="page-controls" aria-label="Score pages">
-                  <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous page</button>
-                  <button type="button" disabled={page === score.page_count} onClick={() => setPage(page + 1)}>Next page</button>
-                </nav>
-              )}
-              <img className="score-preview" src={new URL(previewPath, apiUrl).href} alt={`Page ${page} of your uploaded score`} />
-            </>
-          ) : <p>Upload a PDF to see your score here.</p>}
+        {history.saveError && <div className="practice-save-error" role="alert"><p>{history.saveError} Your current results are still visible.</p><button type="button" disabled={history.saving || Boolean(busy) || reopening || comparing} onClick={() => history.retry(file, score, pageResults).catch(() => {})}>Retry saving score and tips</button></div>}
+        {reopenError && <div className="practice-save-error" role="alert"><p>{reopenError}</p><button type="button" onClick={() => setReopenVersion(reopenVersion + 1)}>Retry opening session</button><Link href="/history">Back to history</Link></div>}
+        <section className="hero" aria-labelledby="hero-title">
+          <svg className="hero-staff" viewBox="0 0 720 440" fill="none" aria-hidden="true">
+            {[0, 21, 42, 63, 84].map((offset) => (
+              <path key={offset} d="M-10 350C177 442 282 128 485 161S631 261 751 128"
+                transform={`translate(0 ${offset})`} />
+            ))}
+          </svg>
+          <div className="hero-copy">
+            <p className="eyebrow hero-label"><span />AI VIOLIN PRACTICE ASSISTANT</p>
+            <h1 id="hero-title">Practice <em>studio.</em></h1>
+            <p className="hero-description">Upload a score for practice tips, or compare your playing with a YouTube reference. No PDF is needed to compare recordings.</p>
+          </div>
+          <form className="upload-card" onSubmit={upload}>
+            <h2>Upload your score</h2>
+            <p className="upload-description">Choose a sheet music PDF up to 15 MB.</p>
+            <label className={`file-picker${busy ? " is-disabled" : ""}`}>
+              <input type="file" accept=".pdf,application/pdf" onChange={selectFile}
+                disabled={Boolean(busy) || comparing || reopening || history.saving || Boolean(requestedSession)} required aria-label="Choose sheet music PDF" />
+              <span className="file-symbol" aria-hidden="true">↥</span>
+              <span className="file-copy">
+                <strong>{file ? file.name : "Choose a PDF"}</strong>
+                <small>{file ? "Click to choose a different score" : "Select a file from your device"}</small>
+              </span>
+            </label>
+            <button className="primary-button" disabled={!file || Boolean(score) || Boolean(busy) || comparing || reopening || history.saving || Boolean(requestedSession)}>
+              {busy === "upload" ? "Uploading…" : "Upload and analyze"}
+            </button>
+            {error && <p className="error" role="alert">{error}</p>}
+          </form>
         </section>
-        <section className="panel" aria-labelledby="tips-title" aria-busy={busy === page}>
-          <h2 id="tips-title" ref={tipsHeading} tabIndex={-1}>{score ? `Practice tips · Page ${page}` : "Practice tips"}</h2>
-          <p role="status" hidden={typeof busy !== "number" && !stopMode}>
-            {stopMode === "cancel" ? "Tip generation canceled." : stopMode === "finish" ? "Finished early. Your completed tips are still available." : typeof busy === "number" ? `Analyzing page ${busy} of ${score.page_count}…` : ""}
-          </p>
-          {typeof busy === "number" && !stopMode && (
-            <div className="page-controls">
-              <button type="button" onClick={() => stopTips("cancel")}>Cancel generating tips</button>
-              <button type="button" onClick={() => stopTips("finish")}>Finish generating tips early</button>
+
+        <section className="studio" aria-labelledby="studio-title">
+          <div className="studio-heading">
+            <div>
+              <h2 id="studio-title">Practice Room</h2>
             </div>
+            <div className="session-status" role="status">
+              <span className={`status-dot${busy ? " is-working" : ""}`} aria-hidden="true" />
+              {progressText || "Waiting for a score"}
+            </div>
+          </div>
+          {analyzing && (
+            <>
+              <progress className="analysis-progress" value={completedPages} max={score.page_count}
+                aria-label="Pages analyzed" />
+              <div className="retry-controls analysis-actions">
+                <button type="button" onClick={() => stopTips("cancel")}>
+                  Cancel generating tips
+                </button>
+                <button type="button" onClick={() => stopTips("finish")}>
+                  Finish generating tips early
+                </button>
+              </div>
+            </>
           )}
           {!busy && !reopening && !reopenError && remainingPages.length > 0 && (
-            <button className="primary-button" type="button" onClick={() => generateTips(score, remainingPages)}>Generate remaining tips</button>
+            <div className="retry-controls analysis-actions">
+              <button type="button" onClick={() => generateTips(score, remainingPages)}>
+                Generate remaining tips
+              </button>
+            </div>
           )}
-          {!score && <p>Upload a score to generate tips for every page.</p>}
-          {score && !result && busy !== page && <p>{stopMode ? "This page hasn’t been analyzed yet." : "This page is waiting for analysis."}</p>}
-          {result?.error && <p className="error" role="alert">{result.error}</p>}
-          {result?.warning && <p>{result.warning}</p>}
-          {result && !result.error && (
-            <div className="tips"><Markdown>{result.practice_tips?.trim() || "No specific practice tips were returned."}</Markdown></div>
-          )}
-          {result?.error && <button className="primary-button" type="button" onClick={() => generateTips(score, [page])} disabled={Boolean(busy)}>Retry this page</button>}
+
+          <div className="workspace">
+            <section className="panel score-panel" aria-labelledby="preview-heading">
+              <div className="panel-heading">
+                <div className="panel-title">
+                  <span className="panel-number" aria-hidden="true">01</span>
+                  <h3 id="preview-heading">Score Preview</h3>
+                </div>
+                {score && <span className="page-badge">Page {page} / {score.page_count}</span>}
+              </div>
+              {score ? (
+                <>
+                  <div className="score-toolbar">
+                    <span className="filename" title={file.name}>{file.name}</span>
+                    <a href={new URL(`/files/${encodeURIComponent(score.file_id)}.pdf`, apiUrl).href}>
+                      Open PDF <span aria-hidden="true">↗</span>
+                    </a>
+                  </div>
+                  {score.page_count > 1 && (
+                    <nav className="page-controls" aria-label="Score pages">
+                      <button type="button" onClick={() => setPage(page - 1)} disabled={page === 1}>
+                        <span aria-hidden="true">←</span> Previous page
+                      </button>
+                      <button type="button" onClick={() => setPage(page + 1)} disabled={page === score.page_count}>
+                        Next page <span aria-hidden="true">→</span>
+                      </button>
+                    </nav>
+                  )}
+                  <div className="score-surface">
+                    <img src={new URL(previewPath, apiUrl).href}
+                      alt={`Page ${page} of the uploaded score`} />
+                  </div>
+                </>
+              ) : (
+                <div className="empty-score">
+                  <div className="paper-sketch" aria-hidden="true"><MusicMark /></div>
+                  <h4>Your score goes here</h4>
+                  <p>Upload your sheet music to see the pages here.</p>
+                </div>
+              )}
+            </section>
+
+            <section className="panel tips-panel" aria-labelledby="tips-heading" aria-busy={pageIsAnalyzing}>
+              <div className="panel-heading">
+                <div className="panel-title">
+                  <span className="panel-number" aria-hidden="true">02</span>
+                  <h3 id="tips-heading" ref={tipsHeading} tabIndex={-1}>Practice tips</h3>
+                </div>
+                {score && <span className="page-badge">Page {page}</span>}
+              </div>
+              <div className="tips-body">
+                {!score && (
+                  <div className="tips-intro">
+                    <span className="coach-mark" aria-hidden="true">✦</span>
+                    <h4>A closer look at the music</h4>
+                    <p>Fiddle reads each page and highlights passages worth practicing, with focused exercises for the score in front of you.</p>
+                  </div>
+                )}
+                {score && !result && (
+                  <p className="note-card">
+                    {pageIsAnalyzing
+                      ? `Reading page ${page} and generating tips…`
+                      : !analyzing || stopMode
+                        ? `Page ${page} hasn’t been analyzed yet.`
+                        : `Page ${page} is waiting for analysis.`}
+                  </p>
+                )}
+                {result?.error && <p className="note-card error" role="alert">{result.error}</p>}
+                {result && !result.error && (
+                  <div className="tips">
+                    {result.warning && <p className="recognition-warning">{result.warning}</p>}
+                    {result.practice_tips?.trim()
+                      ? <Markdown>{result.practice_tips}</Markdown>
+                      : <p className="note-card">No specific tips were returned for this page.</p>}
+                  </div>
+                )}
+                {(failedPages.length > 0 || (result && !result.practice_tips?.trim())) && (
+                  <div className="retry-controls">
+                    {failedPages.length > 0 && (
+                      <button type="button" onClick={() => generateTips(score, failedPages)} disabled={Boolean(busy)}>
+                        Retry failed pages
+                      </button>
+                    )}
+                    {result && !result.practice_tips?.trim() && (
+                      <button type="button" onClick={() => generateTips(score, [page])} disabled={Boolean(busy)}>
+                        Retry this page
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+          <div ref={recordingSection} className="recording-section" tabIndex={-1}>
+            <PerformanceReview key={score?.file_id ?? "standalone"} post={post} canSave={Boolean(user)} disabled={reopening || busy === "upload" || Boolean(reopenError)} onBusyChange={setComparing}
+              onSave={saveComparison} />
+            {user && <SavedRecordings key={history.session?.id ?? recordingSession?.id ?? "new"} client={client} userId={user.id} recordings={savedRecordings} />}
+          </div>
         </section>
-      </div>
-      <PerformanceReview key={score?.file_id ?? "standalone"} post={post} canSave={Boolean(user)} onSave={saveComparison}
-        disabled={reopening || Boolean(reopenError) || busy === "upload"} onBusyChange={setComparing} />
-      {user && (
-        <SavedRecordings key={history.session?.id ?? recordingSession?.id ?? "new"}
-          client={client} userId={user.id} recordings={savedRecordings} />
-      )}
-    </main>
+        <footer className="footer"><span>Fiddle Studio</span><span>Made for the practice room.</span></footer>
+      </main>
+    </>
+  );
+}
+
+function MusicMark() {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M12 22V9l13-3v13M12 12l13-3" stroke="currentColor" strokeWidth="1.8"
+        strokeLinecap="round" strokeLinejoin="round" />
+      <ellipse cx="8.5" cy="22.5" rx="4" ry="2.9" fill="currentColor" transform="rotate(-19 8.5 22.5)" />
+      <ellipse cx="21.5" cy="19.5" rx="4" ry="2.9" fill="currentColor" transform="rotate(-19 21.5 19.5)" />
+    </svg>
   );
 }

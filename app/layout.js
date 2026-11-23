@@ -15,11 +15,14 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <header className="topbar">
             <div className="site-width topbar-inner">
-              <Link className="wordmark" href="/" aria-label="Fiddle home">♫ Fiddle</Link>
+              <Link href="/" className="wordmark" aria-label="Fiddle home">
+                <span className="brand-mark" aria-hidden="true">♫</span>
+                Fiddle<span className="brand-period">.</span>
+              </Link>
               <nav className="site-nav" aria-label="Main navigation">
                 <Link href="/">Home</Link>
-                <Link href="/practice">Practice Studio</Link>
                 <AccountLink />
+                <Link className="nav-practice" href="/practice">Practice Studio</Link>
               </nav>
             </div>
           </header>
