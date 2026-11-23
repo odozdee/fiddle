@@ -50,18 +50,20 @@ function SessionList({ client, userId }) {
   return (
     <>
       {sessions.length === 0 && <p>No saved sessions on this page yet.</p>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <div className="history-grid">
         {sessions.map((session) => (
-          <li className="panel" key={session.id} style={{ marginBottom: "1rem" }}>
-            <h2><Link href={`/practice?session=${encodeURIComponent(session.id)}`}>{session.title}</Link></h2>
-            <p>{session.page_count ? `${session.page_count} score pages` : "Recording comparison"}</p>
+          <Link className="history-card" key={session.id} href={`/practice?session=${encodeURIComponent(session.id)}`}>
+            <span className="history-icon" aria-hidden="true">{session.page_count ? "♫" : "♪"}</span>
+            <h2>{session.title}</h2>
+            <p>{session.page_count ? `${session.page_count} score pages` : "Audio comparison"}</p>
             <time dateTime={session.created_at}>
               {new Date(session.created_at).toLocaleDateString()}
             </time>
-          </li>
+            <span className="history-open">Open session ↗</span>
+          </Link>
         ))}
-      </ul>
-      <nav className="page-controls" aria-label="Practice history pages">
+      </div>
+      <nav className="history-pagination" aria-label="Practice history pages">
         <button type="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>
           Previous
         </button>
@@ -90,9 +92,15 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="site-width">
-      <h1>Practice history</h1>
-      <p><Link href="/practice">Open Practice Studio</Link></p>
+    <main className="site-width history-page">
+      <div className="history-heading">
+        <div>
+          <p className="eyebrow">YOUR PRACTICE ROOM</p>
+          <h1>Practice history</h1>
+          <p>Return to your scores, tips, recordings, and feedback.</p>
+        </div>
+        <Link className="home-cta" href="/practice">New session ↗</Link>
+      </div>
       {content}
     </main>
   );
