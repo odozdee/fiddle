@@ -165,3 +165,25 @@ body:has(.auth-form-page) .topbar { display: none; }
   .system-stages li:nth-child(odd)::after { display: block; }
   .system-stages li:nth-child(even)::after { display: none; }
 }
+.home-comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(1.5rem, 6vw, 5rem); margin: clamp(3rem, 7vw, 6rem) 0; }
+.comparison-copy h2 { margin: 0 0 1rem; font: 400 clamp(2rem, 4vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -0.045em; }
+.comparison-copy > p:not(.eyebrow) { color: var(--muted); font-size: 0.96rem; line-height: 1.7; }
+.example-link { display: inline-block; margin-top: 0.55rem; color: #874732; font-size: 0.9rem; font-weight: 750; text-underline-offset: 0.25em; }
+.comparison-visual { margin: 0; padding: clamp(1rem, 3vw, 1.65rem); border: 1px solid var(--line); border-radius: 1.2rem; background: var(--paper); box-shadow: 0 14px 36px #41272d0c; }
+.comparison-visual figcaption { margin-bottom: 1.2rem; color: var(--accent); font-size: 0.65rem; font-weight: 750; letter-spacing: 0.12em; }
+.waveform-row { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--line); }
+.waveform-row > span { color: var(--muted); font-size: 0.77rem; }
+.waveform-row svg { display: block; width: 100%; fill: #845b79; }
+.reference-wave svg { fill: #b76b49; }
+.comparison-flow { display: grid; justify-items: center; gap: 0.35rem; padding: 1rem 0 0.7rem; color: var(--muted); font-size: 0.79rem; }
+.comparison-flow > span:nth-child(even) { color: #b76b49; }
+.lesson-preview { display: flex; align-items: center; gap: 0.7rem; padding: 0.85rem; border-radius: 0.6rem; background: #f4e9ef; }
+.lesson-preview > span { display: grid; place-items: center; width: 2.25rem; flex-shrink: 0; height: 2.25rem; border: 1px solid #d6b9ca; border-radius: 50%; color: var(--plum); }
+.lesson-preview strong { display: block; font-size: 0.85rem; }
+.lesson-preview small { display: block; margin-top: 0.2rem; color: var(--muted); line-height: 1.5; font-size: 0.75rem; }
+@media (max-width: 43rem) {
+  .home-comparison { grid-template-columns: 1fr; }
+  .footer-invitation { align-items: flex-start; flex-direction: column; }
+  .footer-details { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .footer-about { grid-column: 1 / -1; }
+}

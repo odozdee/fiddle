@@ -118,6 +118,37 @@ export default function HomePage() {
         </ol>
       </section>
 
+      <section className="home-comparison" aria-labelledby="comparison-title">
+        <div className="comparison-copy">
+          <p className="eyebrow">COMPARING YOUR RECORDING</p>
+          <h2 id="comparison-title">Hear your playing<br />with a fresh perspective</h2>
+          <p>Upload a short recording of your playing and choose a YouTube performance of the same passage. Fiddle aligns the audio and compares its pacing and pitch patterns.</p>
+          <p>When the comparison suggests pitch or rhythm work, watch a relevant violin lesson right beside the feedback.</p>
+          <Link className="example-link" href="/practice">Compare your playing</Link>
+        </div>
+        <figure className="comparison-visual">
+          <figcaption>ILLUSTRATED AUDIO WORKFLOW</figcaption>
+          <div className="waveform-row">
+            <span>Your take</span>
+            <svg viewBox="0 0 320 65" aria-hidden="true">
+              {[16, 28, 44, 30, 18, 12, 24, 48, 55, 38, 20, 15, 30, 45, 30, 20, 10, 22, 38, 50, 30, 20, 12, 18, 35, 45, 32, 16].map((height, index) => (
+                <rect key={index} x={index * 11 + 5} y={(65 - height) / 2} width="4" height={height} rx="2" />
+              ))}
+            </svg>
+          </div>
+          <div className="waveform-row reference-wave">
+            <span>Reference</span>
+            <svg viewBox="0 0 320 65" aria-hidden="true">
+              {[14, 25, 38, 25, 12, 16, 35, 54, 40, 23, 12, 25, 42, 35, 17, 12, 27, 45, 50, 22, 14, 16, 32, 42, 27, 14, 8, 10].map((height, index) => (
+                <rect key={index} x={index * 11 + 5} y={(65 - height) / 2} width="4" height={height} rx="2" />
+              ))}
+            </svg>
+          </div>
+          <div className="comparison-flow"><span>Align the passage</span><span aria-hidden="true">↓</span><span>Compare pacing & pitch</span><span aria-hidden="true">↓</span></div>
+          <div className="lesson-preview"><span aria-hidden="true">▷</span><div><strong>A lesson to practice with</strong><small>Embedded violin tutorials for the suggested work</small></div></div>
+        </figure>
+      </section>
+
     </main>
   );
 }
