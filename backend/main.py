@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -22,8 +23,17 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 app = FastAPI(title="Fiddle")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_methods=["POST"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://fiddle-nu.vercel.app",
+        *[
+            origin.strip().rstrip("/")
+            for origin in os.getenv("FIDDLE_ALLOWED_ORIGINS", "").split(",")
+            if origin.strip()
+        ],
+    ],
+    allow_methods=["GET", "POST"],
 )
 app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
 
