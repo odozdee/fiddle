@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -fL --retry 3 \
     https://github.com/Audiveris/audiveris/releases/download/5.7.0/Audiveris-5.7.0-ubuntu24.04-x86_64.deb \
     -o /tmp/audiveris.deb \
+    && mkdir -p /usr/share/desktop-directories \
     && apt-get install -y --no-install-recommends /tmp/audiveris.deb \
     && rm /tmp/audiveris.deb \
     && rm -rf /var/lib/apt/lists/* \
